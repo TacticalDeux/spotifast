@@ -209,6 +209,9 @@ pub fn actions_row(
                         context: RowContext::View {
                             uris: Arc::clone(&uris),
                             context_uri: uri.clone(),
+                            // Header playback needs no edit rights; row
+                            // menus carry theirs via the table conversion.
+                            editable_playlist: None,
                         },
                         uri: String::new(),
                         index: 0,
@@ -582,9 +585,13 @@ pub fn table(app: &mut App, ui: &mut egui::Ui, table: Table<'_>) {
     // positions that no longer match the screen.
     let context = if let Some(uris) = &entry.view_uris {
         match &table.context {
-            RowContext::Context { uri, .. } => RowContext::View {
+            RowContext::Context {
+                uri,
+                editable_playlist,
+            } => RowContext::View {
                 uris: Arc::clone(uris),
                 context_uri: uri.clone(),
+                editable_playlist: editable_playlist.clone(),
             },
             _ => RowContext::Uris(Arc::clone(uris)),
         }
@@ -2866,7 +2873,7 @@ mod tests {
             matches!(
                 app.actions.as_slice(),
                 [Action::PlayFromRow {
-                    context: RowContext::View { uris, context_uri },
+                    context: RowContext::View { uris, context_uri, .. },
                     index: 0,
                     ..
                 }] if uris.as_ref() == ["spotify:track:1", "spotify:track:2"] && context_uri == "spotify:playlist:test"
@@ -2963,7 +2970,7 @@ mod tests {
             matches!(
                 app.actions.as_slice(),
                 [Action::PlayFromRow {
-                    context: RowContext::View { uris, context_uri },
+                    context: RowContext::View { uris, context_uri, .. },
                     index: 0,
                     ..
                 }] if uris.as_ref() == ["spotify:track:1", "spotify:track:2"] && context_uri == "spotify:playlist:test"
