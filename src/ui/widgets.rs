@@ -538,13 +538,13 @@ pub fn picked_menu(
     // Removal is URI-based, so one entry covers the whole selection on
     // both the unsorted context and a sorted or filtered view. The caller
     // only passes a playlist when every picked row shares it.
-    if let Some((playlist_id, _)) = editable_playlist {
-        if menu_item(ui, &palette, Some(Icon::Minus), "Remove from this playlist") {
-            app.actions.push(Action::RemoveFromPlaylist {
-                playlist_id: playlist_id.clone(),
-                uris: uris.clone(),
-            });
-        }
+    if let Some((playlist_id, _)) = editable_playlist
+        && menu_item(ui, &palette, Some(Icon::Minus), "Remove from this playlist")
+    {
+        app.actions.push(Action::RemoveFromPlaylist {
+            playlist_id: playlist_id.clone(),
+            uris: uris.clone(),
+        });
     }
     add_to_playlist_menu(ui, app, songs);
 }

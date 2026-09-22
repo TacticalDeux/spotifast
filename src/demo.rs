@@ -6049,7 +6049,7 @@ mod tests {
             pointer_click(remove, egui::PointerButton::Primary),
         );
         assert!(
-            matches!(app.actions.as_slice(), [Action::RemoveFromPlaylist { playlist_id, uris }] if playlist_id == "pl1" && uris == &[uri.clone()])
+            matches!(app.actions.as_slice(), [Action::RemoveFromPlaylist { playlist_id, uris }] if playlist_id == "pl1" && uris == std::slice::from_ref(&uri))
         );
         // A view without edit rights offers no removal at all.
         let readonly = RowContext::View {
