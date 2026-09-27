@@ -1257,6 +1257,8 @@ impl App {
             // report a context URI. Keep the assumed URI unless contradicted
             // by a poll taken since the request: one from before it still
             // tells the story from before, whatever device it describes.
+            // A pause never contradicts it: the listing is still where the
+            // paused song comes from, so the assumed URI stands while paused.
             let contradicted = self.remote.as_ref().is_some_and(|snapshot| {
                 snapshot.received_at > assumed.at
                     && snapshot
@@ -1265,7 +1267,7 @@ impl App {
                         .as_ref()
                         .is_some_and(|context| context.uri != assumed.uri)
             });
-            if held || (!contradicted && self.believed_playing()) {
+            if held || !contradicted {
                 return (!assumed.uri.is_empty()).then(|| assumed.uri.clone());
             }
         }
@@ -10905,6 +10907,51 @@ mod tests {
         assert_eq!(
             app.playing_context_uri().as_deref(),
             Some("spotify:playlist:phone")
+        );
+    }
+
+    /// Pausing keeps the assumed playlist: the listing is still where the
+    /// paused song comes from, so the player bar menu keeps its removal.
+    #[test]
+    fn a_paused_playlist_keeps_its_context() {
+        // #given an owned playlist and a play request from before the hold
+        let mut app = headless_app();
+        app.user = Some(User {
+            id: "me".into(),
+            ..User::default()
+        });
+        app.library.playlists = Loadable::Loaded(vec![Playlist {
+            id: "mine".into(),
+            name: "Mine".into(),
+            uri: "spotify:playlist:mine".into(),
+            owner: crate::api::models::Owner {
+                id: Some("me".into()),
+                ..Default::default()
+            },
+            snapshot_id: Some("snap1".into()),
+            ..Playlist::default()
+        }]);
+        app.assumed_context = Some(AssumedContext {
+            uri: "spotify:playlist:mine".into(),
+            shuffle: None,
+            at: Instant::now() - ASSUMED_CONTEXT_HOLD - Duration::from_secs(1),
+        });
+        // #when the song is paused past the hold, with local playback
+        // reporting no remote state
+        app.optimistic_playing = Some((false, Instant::now()));
+        app.remote = None;
+
+        // #then the playlist still names the context and stays removable
+        assert_eq!(
+            app.playing_context_uri().as_deref(),
+            Some("spotify:playlist:mine")
+        );
+        assert_eq!(
+            app.editable_context_playlist(),
+            Some(RowContext::Context {
+                uri: "spotify:playlist:mine".into(),
+                editable_playlist: Some(("mine".into(), Some("snap1".into()))),
+            })
         );
     }
 
